@@ -262,6 +262,7 @@ def test_minor_alleles(regr, cols_idxs, model="", dataset="", raw_data=\
 def main():
     file = sys.argv[1]
     labels = sys.argv[2]
+    model_name = sys.argv[3]
     data_set = file.split('_')[-2].replace('/features',"")
 
     data = pd.read_pickle(file)  
@@ -278,9 +279,9 @@ def main():
     X_test.to_csv(f"Test_set_{data_set}.csv")
     pd.DataFrame(y_test.T).to_csv(f"Test_set_labels_{data_set}.csv")
 
-    train_model('random_forest', X_train, X_test, y_train, y_test, cols_idxs, data_set)
-    train_model('xgboost', X_train, X_test, y_train, y_test, cols_idxs, data_set)
-    train_model('xgboost_sklearn', X_train, X_test, y_train, y_test, cols_idxs, data_set)
+    train_model(model_name, X_train, X_test, y_train, y_test, cols_idxs, data_set)
+    # train_model('xgboost', X_train, X_test, y_train, y_test, cols_idxs, data_set)
+    # train_model('xgboost_sklearn', X_train, X_test, y_train, y_test, cols_idxs, data_set)
     
 
 if __name__ == "__main__":
