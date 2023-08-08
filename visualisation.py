@@ -1,16 +1,16 @@
-import sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.pyplot import hist
-from sklearn import preprocessing
-from sklearn.discriminant_analysis import StandardScaler
-from sklearn.metrics import mean_squared_error
-from sklearn.pipeline import FunctionTransformer, Pipeline
 from scipy.stats import norm
 
 #--------------- VISUALISATION ---------------#
 def pretty_print_alignments(hybrid_parents,f):    
+    '''This function pretty prints the hybrid with the parents. It is inspired 
+    byt the code from the course Algorithms in Sequence Analysis (X_405050) 
+    given at the VU. 
+    It prints the parent with the longest common preffix first, then the hybrid 
+    and then the parent with the longest common suffix. The places where the 
+    hybrid and parents align, are markes by a |.'''
     sequences = list(hybrid_parents[0].keys())
     reads = list(hybrid_parents[0].values())
     hybrid = sequences[0]
@@ -52,7 +52,7 @@ def pretty_print_alignments(hybrid_parents,f):
         parentB = "parentB = " + diff_hybrid_parent + parentB
         matchA =  "          " + matchA
         matchB =  "          " + diff_hybrid_parent + matchB[::-1]
-    else: # len(hybrid) < len(parentB):
+    else:
         diff_hybrid_parent = " " * (len(parentB) - len(hybrid))
         hybrid =  "hybrid  = " + diff_hybrid_parent + hybrid
         parentA = "parentA = " + diff_hybrid_parent +parentA
@@ -65,10 +65,13 @@ def pretty_print_alignments(hybrid_parents,f):
     h_reads = "Hybrid reads = " + str(reads[0])
     A_reads = "ParentA reads = " + str(reads_parentsA)
     B_reads = "ParentB reads = " + str(reads_parentsB)
-    aligned_matches = '\n '.join([true_all_hyb, true_all_A, true_all_B, h_reads, A_reads, B_reads, parentA, matchA, hybrid, matchB, parentB])
+    aligned_matches = '\n '.join([true_all_hyb, true_all_A, true_all_B, h_reads, \
+                                  A_reads, B_reads, parentA, matchA, hybrid, matchB, parentB])
     print(aligned_matches)
     f.write(aligned_matches)
 
+    # uncomment the following lines for writing the pretty print alignement to a 
+    # file
     # with open('pretty_print_hybrid16-new.txt', 'a') as convert_file:
     #     string_list = [h_reads, A_reads, B_reads, parentA, matchA, hybrid, matchB, parentB]
     #     for i in string_list:
@@ -92,6 +95,8 @@ def histogram_ratios_per_class(hybrid_label_dd, non_hybrid_label_dd):
     plt.show(block=True)
 
 def scatter_predict_vs_true(y_pred, y_true, model="",dataset = "", train_or_test="", reads_ratio="ratio"):
+    '''This models creates a scatter plot for a predicted value against its 
+    actual value. It also plots a line for perfect prediction where x = y.'''
     f, ax = plt.subplots(figsize=(6, 6))
     ax.scatter(y_pred, y_true , s=5, c='deepskyblue')
     lims = [
@@ -141,7 +146,7 @@ def plot_ratio_to_feature(hybrid_dd, hybrid_label_dd, non_hybrid_dd, non_hybrid_
         read_counts.extend([item[feature_index] for item in features])
 
         # non_hybrid_parent_ratios.extend(non_hybrid_label_dd[marker])
-        # non_read_counts.extend([item[26] for item in non_hybrid_dd[marker]])
+        # non_read_counts.extend([item[feature_index] for item in non_hybrid_dd[marker]])
         
     read_counts = [float(i) for i in read_counts]
 
@@ -183,11 +188,9 @@ def plot_feature_against_ratio(file, labels):
 def read_data_plot_relation_and_check_normal_distribution(file, labels):
     data = pd.read_pickle(file)  
     y = pd.read_pickle(labels)  
-    # X = data.loc[:,"overlap_T_counts"]
 
-
-    # X, y = zip(*sorted(zip(X, y)))
-    # plt.scatter(X ,X, s=2, c='r')
+    X, y = zip(*sorted(zip(X, y)))
+    plt.scatter(X ,X, s=2, c='r')
 
     plt.plot(data, norm.pdf(data,0,2))
     plt.ylabel('Length overlap (nt)')
@@ -200,8 +203,6 @@ def main():
     labels = "Features_data_Mitodata_Mito-mini/labels_all.pkl"
 
     plot_feature_against_ratio(data, labels)
-
-    # plot_data(data, labels)
     read_data_plot_relation_and_check_normal_distribution(data, labels)
 
 

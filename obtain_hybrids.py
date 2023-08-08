@@ -93,7 +93,8 @@ def get_subfolder_form_all_mito(folder, dataset_name, train=True):
 
     # Comment out to inspect linearity in data
     # pp.histogram_ratios_per_class(hybrid_label_dd, non_hybrid_label_dd)
-    # pp.plot_ratio_to_reads(hybrid_dd,hybrid_label_dd, non_hybrid_dd, non_hybrid_label_dd)
+    # pp.plot_ratio_to_reads(hybrid_dd,hybrid_label_dd, non_hybrid_dd, \
+    # non_hybrid_label_dd)
 
 
     kit = 'Features_data_' + kit + "_" + dataset_name + '_new'

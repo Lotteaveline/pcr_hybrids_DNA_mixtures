@@ -1,32 +1,24 @@
-'''
-Top important features according to selectKBest:
-['hybrid_reads', 'parB_reads', 'len_parA', 'len_parB',
-'hybrid_CG_counts', 'hybrid_C_counts', 'overlap_C_counts',
-'overlap_G_counts']
-'''
 import time
 import pandas as pd
 import numpy as np
 import sys
 import matplotlib.pyplot as plt
-from sklearn.pipeline import make_pipeline
-from sklearn.svm import SVR
 import visualisation as pp
 import pickle
 
-from sklearn.feature_selection import SelectKBest, f_regression, mutual_info_regression
+from sklearn.feature_selection import SelectKBest, mutual_info_regression
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-from sklearn.model_selection import GridSearchCV, KFold, RepeatedKFold, cross_val_score, train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import BayesianRidge, LinearRegression
-
+from sklearn.model_selection import GridSearchCV, KFold, cross_val_score, train_test_split
 
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from xgboost import XGBRegressor
 
-
-# Probably obsolete
 def feature_selection(data, labels, dataset): 
+    '''This function was used for testing the information in features for 
+    explaining the hyrbid ratio. Eventually all the created features are used in 
+    the predcitive model. The feature selections uses a scoring function of 
+    mutual information.'''
+
     data = data.loc[:, (data != 0).any(axis=0)]
     labels = np.ravel(labels.astype('float'))
 
@@ -63,7 +55,14 @@ def feature_selection(data, labels, dataset):
 
 def nested_cross_validation_gridsearch(model, parameters, X_train, y_train):
     '''
-    Performs the nested cross validation using a parameter optimisation.
+    Performs the nested cross validation using a hyperparameter optimisation.
+    The model is trained after performing a k-fold of 5 splits with hyperparameter 
+    optimisation. Then the nested cross validation starts, to check the models
+    perfomances. 
+    During research, the nested cross-validation was first used to check the 
+    performances of the models, before pushing through with the used features. 
+    It is now after the training of the model, to show the workings of the 
+    nested-cross validation, but can be commented out.
     '''
     start_time = time.time()
 
@@ -87,7 +86,8 @@ def nested_cross_validation_gridsearch(model, parameters, X_train, y_train):
 
 def train_model(model, X_train, X_test, y_train, y_test,cols_idxs,dataset):
     '''
-    Trains the models random forest regression (random_forest  ), XGBoost sklearn and XGBoost 
+    Trains the models random forest regression (random_forest  ), XGBoost 
+    sklearn and XGBoost. 
     '''
     if model =='random_forest':
         model_name = "Random Forest Regression"
@@ -96,7 +96,8 @@ def train_model(model, X_train, X_test, y_train, y_test,cols_idxs,dataset):
         y_test = y_test.values.ravel()
         parameters = {
         'n_estimators': [50, 100, 150, 200, 250],
-        'criterion': ["squared_error", "absolute_error", "friedman_mse", "poisson"],
+        'criterion': ["squared_error", "absolute_error", "friedman_mse", \
+                      "poisson"],
         'max_depth': [2, 3, 5, 10, 6, 7, 8],
         'min_samples_split': [2, 3, 4, 5],
         'min_samples_leaf' : [2, 3, 4],
@@ -134,17 +135,22 @@ def train_model(model, X_train, X_test, y_train, y_test,cols_idxs,dataset):
     filename = f'Models/{model}_{dataset}.sav'
     pickle.dump(regr, open(filename, 'wb'))
 
+    # the following lines of code will create a bargraph of the feature importances
     plt.title(f"{model_name} feature importance {dataset}")
     feature_names = []
     indices = np.argsort(regr.best_estimator_.feature_importances_)[::-1]
+
+    #get the names of each feature in order of importance
     for i in range(len(regr.best_estimator_.feature_importances_)):
         feature_names.append(X_train.columns[indices[i]])
-    plt.barh(feature_names, regr.best_estimator_.feature_importances_[indices], color='turquoise')
+    plt.barh(feature_names, regr.best_estimator_.feature_importances_[indices], \
+             color='turquoise')
     plt.xlabel("Feature importance")
     plt.tight_layout()
 
     plt.savefig("../Afbeeldingen/Feature_importance" + str(model_name))
 
+    # get and print the evaluation metrics
     r_sq = regr.score(X_test, y_test)
     y_pred = regr.predict(X_test)
     print(len(np.unique(y_pred)))
@@ -155,23 +161,27 @@ def train_model(model, X_train, X_test, y_train, y_test,cols_idxs,dataset):
     print('MAE: ', mean_absolute_error(y_test, y_pred))
     print(f"coefficient of determination: {r_sq}")
         
+    # test the mino alleles for the trained model
     test_minor_alleles(regr,cols_idxs, model_name, dataset)
 
 
 # -------------- Predict the Minor/Hybrid dataset -------------- #
 
-def test_minor_alleles(regr, cols_idxs, model="", dataset="", raw_data="Features_data_Mitodata_mito-mini/features_minor.pkl", labels="Features_data_Mitodata_mito-mini/labels_minor.pkl", extra = "hybrid-minor_allele_combi"):
+def test_minor_alleles(regr, cols_idxs, model="", dataset="", raw_data=\
+                       "Features_data_Mitodata_DSNAME/features_minor.pkl", \
+                        labels="Features_data_Mitodata_DSNAME/labels_minor.pkl", \
+                            extra = "hybrid-minor_allele_combi"):
     '''
     This function predicts the data in a given file. It only considers data 
     where the potential hybrid is at least 50. It outputs a scatter plot with
     the true ratio against the predicted ratio  per sampleand a bargraph with 
     the actual reads along with the predicted reads per sample in the file.
     '''    
-    raw_data = pd.read_pickle(raw_data)
-    labels = pd.read_pickle(labels)
+    raw_data = pd.read_pickle(raw_data.replace('DSNAME', dataset))
+    labels = pd.read_pickle(labels.replace('DSNAME', dataset))
 
 
-    # uncomment for removing the hybrid/minor combi in E0155
+    # uncomment for adding the hybrid/minor combi in E0155
     # minor_data = pd.read_pickle("Features_data_Mitodata_E0155/features_minor.pkl")
     # minor_label = pd.read_pickle("Features_data_Mitodata_E0155/labels_minor.pkl")
 
@@ -183,25 +193,23 @@ def test_minor_alleles(regr, cols_idxs, model="", dataset="", raw_data="Features
     # hybrid reads are > 30
     raw_data = raw_data.astype(float)
     drop_indices = raw_data.index[raw_data.hybrid_reads < 30].tolist()
-    # drop_indices.extend([1,55]) # uncomment for removing the hybrid/minor combi in T0320
+    # drop_indices.extend([1,55]) # uncomment for removing T0320 hybrid/minor combi 
 
     raw_data = raw_data.drop(index=drop_indices)
     raw_data = raw_data.set_axis(range(len(raw_data)))
     labels = labels.drop(index=drop_indices)
     labels = labels.set_axis(range(len(labels)))
 
-    # data = raw_data.drop(['hybrid_reads'], axis=1)
-    # data = raw_data.loc[:, (raw_data != 0).any(axis=0)] #wat doet dit?
-
     data = raw_data.iloc[:,cols_idxs]
 
     y_pred = regr.predict(data)
 
+    #plot the predicted ratios against the actual labels
     pp.scatter_predict_vs_true(y_pred, labels, model, dataset, extra)
     plt.clf()
 
+    # ptint evaluation metrics
     r_sq = regr.score(data, labels)
-
     print("Test on Minor allele/hybrid combi's")
     print('RMSE: ', mean_squared_error(labels, y_pred, squared=False)) 
     print('MAE: ', mean_absolute_error(labels, y_pred))
@@ -210,39 +218,46 @@ def test_minor_alleles(regr, cols_idxs, model="", dataset="", raw_data="Features
     pred = []
     count = 0 
     count2 = 0
+
+    # Iterate through predictions and get actual reads vs predicted reads
     for i in range(len(y_pred)):
-        new = y_pred[i]*(raw_data.loc[i, "lowest_reads_par"] + raw_data.loc[i, "highest_reads_par"])
-        # print(new)
-        # print(float(raw_data.loc[i,"hybrid_reads"]))
-        # print(y_pred[i])
-        # print(float(raw_data.loc[i,"hybrid_reads"]) / (raw_data.loc[i, "lowest_reads_par"] + raw_data.loc[i, "highest_reads_par"]))
-        # print('-'*30)
-        # print(y_pred[i])
+        new = y_pred[i]*(raw_data.loc[i, "lowest_reads_par"] + \
+                         raw_data.loc[i, "highest_reads_par"])
         pred.append(new)
         if float(new) > float(raw_data.loc[i,"hybrid_reads"]):
             count+=1
         else:
             count2+=1
+    # inspect if the model mostly under-predict or over-predicts
     print(f"There are {count} hybrids that predict higher than total")
     print(f"There are {count2} hybrids that predict lower than total")
     X_axis = np.arange(len(pred))
 
-    pp.scatter_predict_vs_true(pred, raw_data.loc[:,"hybrid_reads"], model, dataset, extra, 'reads')
+    #plot predicted reas vs actual reads
+    pp.scatter_predict_vs_true(pred, raw_data.loc[:,"hybrid_reads"], model, \
+                               dataset, extra, 'reads')
 
     fig = plt.figure(figsize=(40,7))
   
+    # these last lines create the side-by-side histogram of actual reads vs
+    # predicted reads. For bigger data sets, the histograms get difficult to 
+    # interpret
     plt.grid(color='grey', linewidth=1, axis='y')
-    plt.bar(X_axis - 0.2, pred, 0.4, label = 'predicted reads by model', color="gold")
-    plt.bar(X_axis + 0.2, raw_data.loc[:,"hybrid_reads"], 0.4, label = 'actual reads of the sequence', color="darkorange")
+    plt.bar(X_axis - 0.2, pred, 0.4, label = 'predicted reads by model', \
+            color="gold")
+    plt.bar(X_axis + 0.2, raw_data.loc[:,"hybrid_reads"], 0.4, label = \
+            'actual reads of the sequence', color="darkorange")
 
     plt.tick_params(axis='x', which='both', bottom=False)
     
     plt.xlabel("Different hybrids")
     plt.ylabel("Reads")
     plt.legend()
-    plt.title('Side-by-side Histogram for predicted reads of a sequence vs. actual reads of the sequence in the profile')
+    plt.title('Side-by-side Histogram for predicted reads of a sequence vs. \
+              actual reads of the sequence in the profile')
 
-    plt.savefig("../Afbeeldingen/Side_by_side_pred_true_" + str(model) + str(dataset), dpi=300)
+    plt.savefig("../Afbeeldingen/Side_by_side_pred_true_" + str(model) + \
+                str(dataset), dpi=300)
 
 def main():
     file = sys.argv[1]
@@ -256,10 +271,8 @@ def main():
 
     data = data.astype(float)
     # data, labels, cols_idxs = feature_selection(data, labels, data_set)
-    # print(cols_idxs)
+
     cols_idxs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]
-
-
 
     X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=0.33, random_state=1)
     X_test.to_csv(f"Test_set_{data_set}.csv")
@@ -269,11 +282,6 @@ def main():
     train_model('xgboost', X_train, X_test, y_train, y_test, cols_idxs, data_set)
     train_model('xgboost_sklearn', X_train, X_test, y_train, y_test, cols_idxs, data_set)
     
-
-    # bayesian_ridge_regression(data, labels, cols_idxs)
-    # svm_regression(data, labels, cols_idxs)
-    # linear_regression(data, labels,cols_idxs)
-
 
 if __name__ == "__main__":
     main()

@@ -12,6 +12,8 @@ def make_prediction(model, data, parentA_reads, parentB_reads):
     print(result)    
 
 def load_data(tssv_file, col_idxs, model_file='Models/random_forest_mito-mini.sav'):
+    ''' Start of a function for employment in FDSTools.
+    NOTE: does not work yet. Work in progress!'''
     feat_names = ['highest_reads_par', 'lowest_reads_par', 'ratio_parents', 'len_hybrid', 'len_longest_par', 'len_shortest_par', 'begin_pos_overlap', 'end_pos_overlap', 'len_overlap', 'longest_c_stretch', 'len_overlap_parA', 'len_overlap_parB', 'hybrid_CG_counts', 'hybrid_AT_counts', 'overlap_AT_counts', 'hybrid_A_counts', 'hybrid_C_counts', 'hybrid_G_counts', 'hybrid_T_counts', 'overlap_A_counts', 'overlap_C_counts', 'overlap_G_counts', 'overlap_T_counts', 'MT_hybrid', 'MT_overlap', 'hybrid_mol_weight']
 
     loaded_model = pickle.load(open(model_file, 'rb'))
@@ -29,7 +31,7 @@ def load_data(tssv_file, col_idxs, model_file='Models/random_forest_mito-mini.sa
             features = pd.DataFrame(features, columns = feat_names)
             y_pred = loaded_model.predict(features)
 
-            r_sq = loaded_model.score(X_test, y_pred)
+            r_sq = loaded_model.score(features, y_pred)
             print(y_pred)
             print(sequence_name)
 
@@ -46,18 +48,9 @@ def main():
 
     cols_idxs = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]
 
-
-    # load_data(file, cols_idxs)
-
-    # file = "Features_data_Mitodata_mito-mini/features_minor.pkl"
-    # labels = "Features_data_Mitodata_mito-mini/labels_minor.pkl"
-    # model = 
-    # 'Models/random_forest_mito-mini.sav'
-
     data = pd.read_pickle(file)
 
     data = data.drop(['hybrid_reads'], axis=1)
-
 
     loaded_model = pickle.load(open(model, 'rb'))
 
