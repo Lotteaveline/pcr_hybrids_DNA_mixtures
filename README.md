@@ -25,5 +25,5 @@ NOTE: FDSTools_hyrbid also contains potential code for the integration of a mode
 Calculating the hybrid potential factor of sequences per marker in a file can be done by:
 
 ```
-python3 calculate_hybrid_potential_facotr.py "path_to_sequences_per_marker_file"
+python3 hybrid_potential_factor.py "path_to_sequences_per_marker_file"
 ```
