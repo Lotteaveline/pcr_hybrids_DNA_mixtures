@@ -19,3 +19,11 @@ python3 FDSTools_hybrid.py "path_to_obtain_hybrids_output_folder/features_all.py
 ```
 
 NOTE: FDSTools_hyrbid also contains potential code for the integration of a model in FDSTools. This is not finished, but a start.
+
+
+
+Calculating the hybrid potential factor of sequences per marker in a file can be done by:
+
+```
+python3 calculate_hybrid_potential_facotr.py "path_to_sequences_per_marker_file"
+```
